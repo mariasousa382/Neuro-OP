@@ -1,24 +1,11 @@
 /*
    NEURO-OP — script.js
-   Neural Criticality CA Game — Fraile et al. (2018) GoL Model
-
-   MODEL: Fraile GoL — Conway's Game of Life + noise + defects
-   Based on: "Cellular Automata and Artificial Brain Dynamics"
-   Fraile et al., Math. Comput. Appl. 2018, 23, 75
+   Neural Criticality CA Game 
 
    STATES:
      0 : INACTIVE  — dead / resting neuron
      1 : ACTIVE    — alive / firing neuron
-    -1 : DEFECT    — permanently dead, blocks propagation (Fraile Section 5)
-
-   RULES (GoL B3/S23 + noise):
-     INACTIVE → ACTIVE  if exactly T active Moore-neighbours (default T=3)
-                         OR with probability p (spontaneous noise)
-     ACTIVE   → ACTIVE  if 2 or 3 active neighbours (survival)
-     ACTIVE   → INACTIVE otherwise (under/over-population)
-     DEFECT   → DEFECT  always (permanent, not counted as neighbour)
-
-   Open boundary conditions (matching the paper).
+    -1 : DEFECT    — permanently dead, blocks propagation (
 
    PLAYER CONTROLS:
      noise     : spontaneous firing probability p  [slider 0-100 → 0-3%]
@@ -45,14 +32,11 @@ const CELL_COLORS = {
 // Glow effect around active cells
 const ACTIVE_GLOW_COLOR = 'rgba(77, 184, 255, 0.3)';
 
-// Activity thresholds — tuned via GoL+noise experiments on a 60x60 grid.
-// Pure GoL equilibrium sits around 3-5%. Below that, no structures survive.
-// GoL-dominated dynamics with spatial structure live around 5-18%.
-// Above ~25%, noise overwhelms GoL structure; temporal autocorrelation drops below 0.5.
-const TARGET_LOW  = 0.04;   // lower edge of healthy zone (just above GoL equilibrium)
-const TARGET_HIGH = 0.18;   // upper edge (GoL still dominates births, spatial order intact)
-const DANGER_LOW  = 0.025;  // flatline danger (below pure GoL equilibrium ~3%)
-const DANGER_HIGH = 0.28;   // seizure danger (noise-dominated, structure collapsing)
+// Activity thresholds 
+const TARGET_LOW  = 0.04;   
+const TARGET_HIGH = 0.18;   
+const DANGER_LOW  = 0.025;  
+const DANGER_HIGH = 0.28;   
 
 // How long the player can stay in the danger zone before dying (seconds)
 const DANGER_SECONDS = 8;
@@ -61,7 +45,7 @@ const HEALTH_DRAIN_RATE = 100 / DANGER_SECONDS;
 
 // Grid size — fixed at 60x60 for richer GoL dynamics than smaller grids
 const FIXED_GRID_SIZE = 60;
-// 20% of cells start active (matches Fraile's experimental setup)
+// 20% of cells start active 
 const INIT_ACTIVE_FRAC = 0.20;
 
 // How many data points to keep for the activity-over-time graph
@@ -75,19 +59,19 @@ let brainOutlinePath = null;
 
 // The grid is a 2D array. Each cell is 0 (inactive), 1 (active), or -1 (defect).
 let grid     = [];
-let nextGrid = [];  // double-buffer: we compute the next state here, then swap
+let nextGrid = [];  
 let gridSize = FIXED_GRID_SIZE;
 
-let running    = false;  // is the simulation stepping forward?
-let gameActive = false;  // is a game in progress? (false = intro or game-over screen)
-let lastTime   = 0;      // timestamp of last animation frame
-let stepAccum  = 0;      // accumulates time to know when to run the next sim step
+let running    = false;  
+let gameActive = false;  
+let lastTime   = 0;      
+let stepAccum  = 0;      
 
 // Player-adjustable parameters (default values)
 let simSpeed  = 8;       // how many simulation steps per second
 let noise     = 25;      // spontaneous firing slider (0-100, maps to probability 0-3%)
 let threshold = 3;       // GoL birth neighbour count T (standard GoL = 3)
-let damping   = 0;       // defect % slider (0-100, maps to 0-10% of grid)
+let damping   = 0;       // defect slider (0-100, maps to 0-10% of grid)
 
 // Stable baseline used whenever a run is restarted from game-over.
 const STABLE_START = {
@@ -125,11 +109,10 @@ let cellSize    = 0;     // pixel size of each cell on the canvas
 let isMouseDown = false; // whether the player is currently dragging on the grid
 
 
-/* 3. SIMULATION — Fraile GoL + Noise + Defects */
+/* 3. SIMULATION */
 
 /**
  * Build a decorative brain-shaped outline (Path2D) to overlay on the grid.
- * This is purely cosmetic — it doesn't affect the simulation.
  */
 function buildBrainOutline(W, H) {
   // Convert normalized coordinates (0-1) to pixel coordinates
@@ -149,23 +132,18 @@ function buildBrainOutline(W, H) {
 
 /**
  * Initialize the grid for a new game.
- * Seeds INIT_ACTIVE_FRAC (20%) of cells as ACTIVE, then scatters defects
- * based on the current defect slider value.
  */
 function initGrid(size = FIXED_GRID_SIZE) {
   gridSize = size;
   grid     = [];
   nextGrid = [];
 
-  // Create empty grids using Int8Array (supports -1 for defects)
+  // Create empty grids
   for (let r = 0; r < gridSize; r++) {
     grid[r]     = new Int8Array(gridSize);
     nextGrid[r] = new Int8Array(gridSize);
   }
 
-  // Scatter defects first (permanently dead cells, as described in Fraile Section 5).
-  // Fraile's experiments show: at p=0.005, 2% defects halves density.
-  // At 5% defects, activity nearly collapses.
   // Slider 0-100 maps to 0-10% defect fraction.
   const defectFrac = (damping / 100) * 0.10;
   for (let r = 0; r < gridSize; r++) {
@@ -209,14 +187,8 @@ function countActiveNeighbors(row, col) {
 
 /**
  * Advance the simulation by one step using Fraile GoL rules + noise.
- *
- * RULES (Conway's GoL B3/S23 with noise extension):
- *   INACTIVE → ACTIVE   if (exactly T active neighbours)     [GoL birth]
- *                        OR (random() < p)                    [noise/spontaneous firing]
- *   ACTIVE   → ACTIVE   if (2 or 3 active neighbours)        [GoL survival]
- *   ACTIVE   → INACTIVE otherwise                             [GoL death: under/over-population]
- *   DEFECT   → DEFECT   always                                [permanent damage]
  */
+ 
 function stepSimulation() {
   // Convert slider value to actual probability: slider 0-100 → p = 0-3%
   const p = (noise / 100) * 0.03;
@@ -279,7 +251,6 @@ function countDefects() {
 /**
  * Activate a circular region of cells — this is what happens when the player
  * clicks or drags on the grid. Also repairs any trauma defects within the radius
- * (converts them back to active cells so they can participate in GoL again).
  */
 function stimulateRegion(row, col, radius) {
   let repaired = 0;
@@ -486,7 +457,7 @@ function resizeGraphCanvas() {
 }
 
 
-/* 6. UI / METRICS — update all the numbers and status indicators */
+/* 6. UI / METRICS */
 
 /**
  * Recalculate activity percentage, update all UI elements, and determine
@@ -707,12 +678,6 @@ function triggerGameOver() {
  *   - deathState: how the player died ('underactive', 'overloaded', 'warning')
  *   - crisisType: what crisis event was active ('trauma', 'seizure_spike', 'sedation', or null)
  *   - crisisRegion: which brain region was hit (for trauma events)
- *
- * Each explanation connects the game mechanics to real neuroscience:
- *   - GoL birth/death rules → neural excitation and inhibition
- *   - Noise → spontaneous neural firing
- *   - Defects → amyloid plaques / neuronal damage (Fraile Section 5)
- *   - Critical zone → the brain's "edge of chaos" (Chialvo 2010, Beggs & Timme 2012)
  */
 function getBioExplanation(deathState, crisisType, crisisRegion) {
   // Crisis-specific explanations take priority (the crisis is what caused the death)
@@ -884,7 +849,7 @@ function setupEventHandlers() {
 }
 
 
-/* 8b. CRISIS EVENT SYSTEM — random emergencies that challenge the player */
+/* 8b. CRISIS EVENT SYSTEM */
 
 // Brain regions that can be targeted by trauma events.
 // Each covers roughly 30-35% of the 60x60 grid (large enough that repairing requires dragging).
@@ -903,11 +868,6 @@ const CRISIS_EVENTS = {
   sedation:      { announce: 2.0 },
 };
 
-/**
- * Helper: programmatically move a slider and fire its input event.
- * This is the key mechanic — crisis events ACTUALLY move the slider,
- * so the player sees it jump and must drag it back.
- */
 function setSlider(id, value) {
   const el = document.getElementById(id);
   if (!el) return;
@@ -921,17 +881,7 @@ function scheduleNextEvent() {
 }
 
 /**
- * TRAUMA crisis — destroys an entire brain region.
- *
- * How it works:
- *   1. ALL cells in the target region become temporary DEFECTS (red).
- *   2. Defects block noise from reactivating the region — no self-healing.
- *   3. The noise slider drops to 8, compounding the pressure.
- *   4. The player must CLICK/DRAG across the red zone to repair cells,
- *      AND drag the noise slider back up.
- *
- * Biologically, this models focal brain injury: local neuron death
- * silences surrounding tissue (Fraile Section 5, Alzheimer's analogy).
+ * TRAUMA crisis
  */
 function triggerTrauma(regionName) {
   lastCrisisType   = 'trauma';
@@ -964,13 +914,7 @@ function triggerTrauma(regionName) {
 }
 
 /**
- * SEIZURE SPIKE crisis — slams the noise slider to maximum.
- *
- * At slider=100 (p=3%), density surges to ~27%, right at seizure threshold.
- * The player must quickly drag the noise slider back down.
- *
- * Biologically, this models a sudden surge in excitatory neurotransmission —
- * like the onset of an epileptic seizure.
+ * SEIZURE SPIKE crisis
  */
 function triggerSeizureSpike() {
   lastCrisisType   = 'seizure_spike';
@@ -980,15 +924,7 @@ function triggerSeizureSpike() {
 }
 
 /**
- * SEDATION crisis — kills noise AND raises threshold.
- *
- * Noise at 0 means no spontaneous firing. T=4 means GoL birth needs
- * exactly 4 active neighbors (very rare in a sparse network).
- * Together, density drops to ~1% — deep flatline.
- * The player must fix BOTH sliders: noise up and threshold down to 3.
- *
- * Biologically, this models general anesthesia: suppressed excitability
- * across the entire cortex.
+ * SEDATION crisis
  */
 function triggerSedation() {
   lastCrisisType   = 'sedation';
@@ -998,10 +934,7 @@ function triggerSedation() {
   addLog('SEDATION — noise killed, threshold raised to 4! Fix both sliders!', 'bad-entry');
 }
 
-/**
- * Check whether all trauma defects have been repaired by the player.
- * (Actual repair happens in stimulateRegion when the player clicks.)
- */
+
 function updateTraumaDefects() {
   if (traumaDefects.length === 0) return;
 
@@ -1052,13 +985,6 @@ function showCrisisAnnouncement(type, regionName) {
   bar.style.width      = '0%';
 }
 
-/**
- * Main crisis system tick — called every frame from the game loop.
- * Handles three things:
- *   1. Checking if trauma repairs are complete
- *   2. Counting down active crisis announcements
- *   3. Scheduling and triggering new crises
- */
 function updateCrisisEvents(dt) {
   // Check if all trauma defects have been repaired
   updateTraumaDefects();
