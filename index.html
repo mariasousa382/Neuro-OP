@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NEURO-OP // Brain Stabilization Protocol</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- CINEMATIC INTRO — 4 screens the player clicks through before the game starts -->
+  <div id="intro-modal" class="modal-overlay">
+    <!-- Animated neural-net background (drawn by JS on this canvas) -->
+    <canvas id="intro-bg-canvas"></canvas>
+
+    <!-- SCREEN 1: Emergency alert — sets the dramatic tone -->
+    <div class="intro-screen active" id="screen-1">
+      <div class="emergency-flash"></div>
+      <div class="intro-content">
+        <div class="hospital-id"><span class="blink-dot"></span>MOUNT SINAI NEUROLOGY — EMERGENCY PROTOCOL ACTIVE</div>
+        <div class="alert-banner"><span class="alert-icon">⚠</span> CRITICAL NEURAL INCIDENT <span class="alert-icon">⚠</span></div>
+        <div class="patient-card">
+          <div class="patient-row"><span class="field-label">PATIENT</span><span class="field-val">CLASSIFIED</span></div>
+          <div class="patient-row"><span class="field-label">INCIDENT</span><span class="field-val warn-text">Neural Criticality Destabilization</span></div>
+          <div class="patient-row"><span class="field-label">STATUS</span><span class="field-val danger-text blink-text">CRITICAL ●</span></div>
+          <div class="patient-row"><span class="field-label">SURGEON</span><span class="field-val accent-text">YOU</span></div>
+        </div>
+        <p class="briefing-text">Your brain. Your operating table. Neural activity is destabilizing — you have minutes before irreversible damage occurs.</p>
+        <button class="btn-next" onclick="nextScreen(2)">ACCEPT MISSION →</button>
+      </div>
+    </div>
+
+    <!-- SCREEN 2: Neuroscience briefing — explains the three cell states and the critical zone -->
+    <div class="intro-screen" id="screen-2">
+      <div class="intro-content">
+        <div class="screen-eyebrow">// SITUATION BRIEFING</div>
+        <h2 class="screen-title">What's Happening<br>Inside Your Brain</h2>
+
+        <!-- Each card explains one of the three cell states in the simulation -->
+        <div class="briefing-cards">
+          <!-- Colors match CELL_COLORS in script.js -->
+          <div class="brief-card">
+            <div class="brief-icon" style="color:#1a3a6e">◼</div>
+            <div class="brief-body"><div class="brief-title">INACTIVE NEURONS</div><div class="brief-desc">Silent. Waiting. Activate when exactly T active neighbours surround them (Game of Life birth rule), or when random background noise fires them. Noise range: 0–3%.</div></div>
+          </div>
+          <div class="brief-card">
+            <div class="brief-icon" style="color:#4db8ff">◼</div>
+            <div class="brief-body"><div class="brief-title">ACTIVE NEURONS</div><div class="brief-desc">Firing. Survive with 2 or 3 active neighbours. Die from under-population (&lt;2) or over-population (&gt;3). Too few = flatline. Too many = seizure.</div></div>
+          </div>
+          <div class="brief-card">
+            <div class="brief-icon" style="color:#ff3355">◼</div>
+            <div class="brief-body"><div class="brief-title">DEFECT NEURONS</div><div class="brief-desc">Permanently dead. Cannot activate. Block signal propagation — like amyloid plaques in Alzheimer's disease. Your defect dial controls how many are present.</div></div>
+          </div>
+        </div>
+
+        <!-- Visual bar showing the healthy "critical zone" between flatline and seizure -->
+        <div class="criticality-explainer">
+          <div class="crit-bar-wrap">
+            <div class="crit-label-left">FLATLINE</div>
+            <div class="crit-bar">
+              <div class="crit-zone danger-left"></div>
+              <div class="crit-zone safe-zone"><span>CRITICAL ZONE</span></div>
+              <div class="crit-zone danger-right"></div>
+            </div>
+            <div class="crit-label-right">SEIZURE</div>
+          </div>
+          <p class="crit-caption">Your mission: keep neural activity in the <strong>critical zone</strong> (4–18%). This is where the network produces structured, propagating dynamics — the brain is adaptive, responsive, and alive. Below ~3%, activity collapses to frozen structures. Above ~25%, noise overwhelms spatial organization.</p>
+        </div>
+        <div class="screen-nav">
+          <button class="btn-back" onclick="nextScreen(1)">← BACK</button>
+          <button class="btn-next" onclick="nextScreen(3)">OPERATIVE TOOLS →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCREEN 3: Surgical tools — explains the 4 player controls -->
+    <div class="intro-screen" id="screen-3">
+      <div class="intro-content">
+        <div class="screen-eyebrow">// SURGICAL TOOLKIT</div>
+        <h2 class="screen-title">Your Instruments</h2>
+        <div class="tools-grid">
+          <div class="tool-card">
+            <div class="tool-icon">CLICK</div>
+            <div class="tool-name">DIRECT STIMULATION</div>
+            <div class="tool-desc">Click or drag the grid to manually activate neurons. Deploy when activity drops too low.</div>
+          </div>
+          <div class="tool-card">
+            <div class="tool-icon">NOISE</div>
+            <div class="tool-name">NOISE / STIM</div>
+            <div class="tool-desc">Spontaneous firing rate (p). Each inactive cell fires randomly with probability p per step. Slider maps 0–3%. Sweet spot ~0.5–1.5% keeps structured activity alive without overwhelming it.</div>
+          </div>
+          <div class="tool-card">
+            <div class="tool-icon">THRESH</div>
+            <div class="tool-name">FIRE THRESHOLD (T)</div>
+            <div class="tool-desc">Active neighbours needed for an inactive cell to activate. Standard setting = 3. Lower = spreads easier. Higher = harder to propagate.</div>
+          </div>
+          <div class="tool-card">
+            <div class="tool-icon">DEFECT</div>
+            <div class="tool-name">NEURAL DEFECTS (%)</div>
+            <div class="tool-desc">Permanently dead neurons scattered across the grid. Models neuronal damage. Even 2-3% defects dramatically impairs signal propagation.</div>
+          </div>
+        </div>
+
+        <!-- Lose condition explanations -->
+        <div class="lose-conditions">
+          <div class="lose-row">
+            <span class="lose-icon">▼</span>
+            <span><strong>FLATLINE:</strong> Activity stays below 2.5% too long — below network equilibrium, structures can't sustain.</span>
+          </div>
+          <div class="lose-row over-row">
+            <span class="lose-icon over-icon">▲</span>
+            <span><strong>SEIZURE:</strong> Activity exceeds 28% too long — noise overwhelms network structure, cascade becomes uncontrollable.</span>
+          </div>
+        </div>
+        <div class="screen-nav">
+          <button class="btn-back" onclick="nextScreen(2)">← BACK</button>
+          <button class="btn-next" onclick="nextScreen(4)">CHOOSE PROTOCOL →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCREEN 4: Launch — final confirmation before game starts -->
+    <div class="intro-screen" id="screen-4">
+      <div class="intro-content launch-screen">
+        <div class="screen-eyebrow">// OPERATIVE CLEARANCE</div>
+        <h2 class="screen-title">Ready to Operate</h2>
+        <div class="launch-block">
+          <div class="patient-vitals">
+            <span class="vital-item"><span class="vital-label">HR</span><span class="vital-val blink-slow">72 BPM</span></span>
+            <span class="vital-sep">|</span>
+            <span class="vital-item"><span class="vital-label">O2</span><span class="vital-val">97%</span></span>
+            <span class="vital-sep">|</span>
+            <span class="vital-item"><span class="vital-label">BP</span><span class="vital-val">118/76</span></span>
+            <span class="vital-sep">|</span>
+            <span class="vital-item"><span class="vital-label">NEURAL</span><span class="vital-val danger-text blink-text">UNSTABLE</span></span>
+          </div>
+          <button id="start-btn" class="btn-launch"><span class="launch-prefix">▶</span> INITIATE NEURO-OP</button>
+          <div class="launch-sub">Good luck, Doctor.</div>
+        </div>
+        <div class="screen-nav single">
+          <button class="btn-back" onclick="nextScreen(3)">← BACK</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- IN-GAME WARNING OVERLAY — flashes on screen when health is low -->
+  <div id="warning-overlay" class="warning-overlay">
+    <div class="warning-overlay-content">
+      <div class="warning-overlay-icon">⚠</div>
+      <div id="warning-overlay-title">FLATLINE IMMINENT</div>
+      <div id="warning-overlay-sub">Neural activity critically low — stimulate immediately</div>
+      <div class="warning-countdown-track">
+        <div id="warning-countdown-bar" class="warning-countdown-bar"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GAME OVER MODAL — shown when health reaches 0 -->
+  <div id="gameover-modal" class="modal-overlay hidden">
+    <div class="gameover-box">
+      <!-- Animated EKG-style flatline drawn by JS -->
+      <div class="gameover-flatline-wrap"><canvas id="flatline-canvas" width="400" height="60"></canvas></div>
+      <div class="gameover-body">
+        <div class="gameover-icon-row"><span id="gameover-icon">✚</span></div>
+        <!-- Title changes based on death cause (flatline, seizure, etc.) -->
+        <div class="gameover-status" id="gameover-title">OPERATION FAILED</div>
+        <!-- Short reason: what went wrong in game terms -->
+        <div class="gameover-reason" id="gameover-reason"></div>
+
+        <!--
+          Biological explanation section — added so the player understands
+          WHY they died in neuroscience terms. Content is generated by
+          getBioExplanation() in script.js, which picks a different explanation
+          depending on (1) how the player died and (2) which crisis event
+          was active when they died, if any.
+        -->
+        <div class="gameover-bio-section">
+          <div class="gameover-bio-label">// WHAT HAPPENED — THE NEUROSCIENCE</div>
+          <div class="gameover-bio" id="gameover-bio"></div>
+        </div>
+
+        <!-- Survival time -->
+        <div class="gameover-stats">
+          <div class="go-stat"><span class="go-label">TIME</span><span class="go-val" id="final-time">0s</span></div>
+        </div>
+        <button id="restart-btn" class="btn-restart">▶ PLAY AGAIN</button>
+        <button id="restart-briefing-btn" class="btn-restart btn-restart-secondary">READ BRIEFING</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN GAME LAYOUT — three-column grid: controls | simulation | legend+log -->
+  <div id="game-container">
+
+    <!-- LEFT PANEL: Player controls (sliders, status indicators) -->
+    <aside id="left-panel">
+      <div class="panel-header">
+        <div class="panel-logo">
+          <span class="logo-cross">+</span>
+          <div><div class="logo-title">NEURO-OP</div><div class="logo-sub">Stabilization System</div></div>
+        </div>
+      </div>
+
+      <!-- Current brain state indicator — changes color and text with brainState -->
+      <div class="status-block">
+        <div class="status-label">// NEURAL STATE</div>
+        <div id="state-badge" class="state-badge stable">● STABLE</div>
+      </div>
+
+      <!-- Health bar: drains when outside safe zone, refills when stable -->
+      <div class="meter-block">
+        <div class="meter-label"><span>BRAIN INTEGRITY</span><span id="health-val">100</span></div>
+        <div class="meter-track"><div id="health-bar" class="meter-fill health" style="width:100%"></div></div>
+      </div>
+
+      <!-- Activity bar: shows current % of active neurons vs the 50% max scale -->
+      <div class="meter-block">
+        <div class="meter-label"><span>NEURAL ACTIVITY</span><span id="activity-pct">0%</span></div>
+        <div class="meter-track">
+          <div id="activity-bar" class="meter-fill activity" style="width:0%"></div>
+          <!-- Dashed outline marks the 4-18% target zone on the bar -->
+          <div class="target-zone"></div>
+        </div>
+        <div class="meter-hint">TARGET RANGE: 4% – 18%</div>
+      </div>
+
+      <div class="score-row">
+        <div class="score-box"><div class="score-num" id="time-display">0s</div><div class="score-lbl">TIME</div></div>
+      </div>
+
+      <div class="panel-divider"></div>
+
+      <h3 class="ctrl-heading">// OPERATIVE CONTROLS</h3>
+
+      <!-- SIM SPEED — how fast the simulation runs (cosmetic, doesn't change the model) -->
+      <div class="ctrl-group">
+        <label for="speed-ctrl" class="ctrl-label">SIM SPEED <span class="tooltip-icon" title="How fast the simulation runs. Does not affect the model — only playback rate.">?</span></label>
+        <input type="range" id="speed-ctrl" min="1" max="20" value="8" />
+        <span class="ctrl-val" id="speed-val">8</span>
+      </div>
+
+      <!-- NOISE — spontaneous firing probability p (slider 0-100 maps to 0-3%) -->
+      <div class="ctrl-group">
+        <label for="noise-ctrl" class="ctrl-label">
+          NOISE / STIM
+          <span class="tooltip-icon" title="Spontaneous firing probability p. Each inactive cell fires randomly with probability p per step. Slider 0–100 maps to p=0–3%. Experiments show structured dynamics are richest around p=0.5–1.5%.">?</span>
+          <span id="noise-prob" style="font-size:8px;color:var(--text-dim);margin-left:4px">p=0.8%</span>
+        </label>
+        <input type="range" id="noise-ctrl" min="0" max="100" value="25" />
+        <span class="ctrl-val" id="noise-val">25</span>
+      </div>
+
+      <!-- THRESHOLD — how many active neighbors are needed for birth (default 3) -->
+      <div class="ctrl-group">
+        <label for="thresh-ctrl" class="ctrl-label">FIRE THRESHOLD (T) <span class="tooltip-icon" title="Number of active neighbours needed for an inactive cell to become active. Standard setting = 3. T=2 triggers seizure-like runaway. T=4+ suppresses rule-based births, so mostly random noise keeps activity alive.">?</span></label>
+        <input type="range" id="thresh-ctrl" min="1" max="6" value="3" />
+        <span class="ctrl-val" id="thresh-val">3</span>
+      </div>
+
+      <!-- DEFECTS — % of permanently dead neurons (slider 0-100 maps to 0-10%) -->
+      <div class="ctrl-group">
+        <label for="damp-ctrl" class="ctrl-label">DEFECTS (%) <span class="tooltip-icon" title="Permanently dead neurons. At low noise, 2% defects halves activity and 5% nearly kills it — matching Fraile's findings. At high noise, defects have less impact since random firing bypasses blocked paths. Range: 0–10%.">?</span></label>
+        <input type="range" id="damp-ctrl" min="0" max="100" value="0" />
+        <span class="ctrl-val" id="damp-val">0%</span>
+      </div>
+
+      <div class="ctrl-group">
+        <label class="ctrl-label">NEURAL DENSITY <span class="tooltip-icon" title="Fixed at 60×60 for rich structured dynamics.">?</span></label>
+        <div class="meter-hint">FIXED GRID: 60×60</div>
+      </div>
+
+      <div class="panel-divider"></div>
+
+      <div class="metric-card">
+        <div class="metric-val" id="m-active">0%</div>
+        <div class="metric-name">ACTIVE NEURONS</div>
+      </div>
+
+      <div class="panel-divider"></div>
+
+      <div class="action-row">
+        <button id="pause-btn" class="btn-secondary">PAUSE</button>
+        <button id="reset-btn" class="btn-secondary">RESET</button>
+      </div>
+    </aside>
+
+    <!-- CENTER: The simulation grid, brain icon, and EEG-style activity trace -->
+    <main id="center-panel">
+      <div id="center-top-bar">
+        <div class="top-bar-item"><span class="blink-dot-green"></span><span id="op-status-text">OPERATION IN PROGRESS</span></div>
+        <div class="top-bar-title">NEURO-OP // BRAIN STABILIZATION</div>
+        <div class="top-bar-item" id="top-bar-time">T+ 0:00</div>
+      </div>
+
+      <!-- Brain SVG icon — changes color and pulse speed based on brain state -->
+      <div id="brain-icon-wrap">
+        <svg id="brain-state-icon" class="brain-icon-svg brain-pulse-stable"
+             viewBox="0 0 100 80" xmlns="http://www.w3.org/2000/svg">
+          <!-- Left hemisphere -->
+          <path d="M48 70 C36 70 22 64 16 54 C10 44 10 30 18 22 C24 16 34 12 44 14 C46 14 48 15 48 17 Z" fill="#00cfff" opacity="0.85"/>
+          <!-- Right hemisphere -->
+          <path d="M52 70 C64 70 78 64 84 54 C90 44 90 30 82 22 C76 16 66 12 56 14 C54 14 52 15 52 17 Z" fill="#00cfff" opacity="0.85"/>
+          <!-- Corpus callosum (center bridge) -->
+          <ellipse cx="50" cy="44" rx="5" ry="26" fill="#00cfff" opacity="0.5"/>
+          <!-- Brain stem -->
+          <rect x="44" y="68" width="12" height="10" rx="4" fill="#00cfff" opacity="0.7"/>
+          <!-- Decorative sulci (brain folds) -->
+          <path d="M22 36 Q28 30 34 36" stroke="#030e1e" stroke-width="1.5" fill="none" opacity="0.4"/>
+          <path d="M18 48 Q26 42 32 48" stroke="#030e1e" stroke-width="1.5" fill="none" opacity="0.4"/>
+          <path d="M78 36 Q72 30 66 36" stroke="#030e1e" stroke-width="1.5" fill="none" opacity="0.4"/>
+          <path d="M82 48 Q74 42 68 48" stroke="#030e1e" stroke-width="1.5" fill="none" opacity="0.4"/>
+        </svg>
+        <div id="brain-icon-label">NEURAL STATE: <span id="brain-icon-state-text">STABLE</span></div>
+      </div>
+
+      <!-- The main simulation canvas — each cell is drawn as a colored square -->
+      <div id="grid-wrapper">
+        <canvas id="grid-canvas"></canvas>
+      </div>
+      <div id="click-hint">▸ CLICK OR DRAG TO STIMULATE NEURONS</div>
+
+      <!-- EEG-style graph showing activity % over the last 200 timesteps -->
+      <div id="graph-section">
+        <div class="graph-label">// NEURAL ACTIVITY TRACE — FRACTION OF ACTIVE CELLS OVER TIME</div>
+        <canvas id="graph-canvas"></canvas>
+      </div>
+    </main>
+
+    <!-- RIGHT PANEL: Cell color legend and event log -->
+    <aside id="right-panel">
+      <h3 class="ctrl-heading">// CELL LEGEND</h3>
+      <!-- Colors here match the CELL_COLORS constant in script.js -->
+      <div class="legend-row"><div class="legend-cell resting-cell"></div><span>INACTIVE</span></div>
+      <div class="legend-row"><div class="legend-cell active-cell"></div><span>ACTIVE (FIRING)</span></div>
+      <div class="legend-row"><div class="legend-cell" style="background:#ff3355"></div><span>DEFECT (DEAD)</span></div>
+
+      <div class="panel-divider"></div>
+
+      <!-- Scrollable log of game events (state changes, crises, repairs) -->
+      <div class="warning-log-label">// OPERATIVE LOG</div>
+      <div id="event-log"></div>
+    </aside>
+
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
